@@ -9,10 +9,13 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-import os, dj_database_url
+import os
 from dotenv import load_dotenv
-load_dotenv(dotenv_path="/srv/Xyronix-Labs-Main-Server/.env.production")
+#load_dotenv(dotenv_path="/srv/Xyronix-Labs-Main-Server/.env")
 from pathlib import Path
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_API_KEY = os.getenv("SUPABASE_API_KEY")
 
 #STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -24,7 +27,7 @@ from pathlib import Path
 #SECRET_KEY = 'django-insecure-)y(oc1dkfnk(26+3j6$+khd%$dblbo=+cn$nfa&jdtvyj!#1$p'
 
 # Load environment variables from production .env file
-load_dotenv(dotenv_path="/srv/Xyronix-Labs-Main-Server/.env.production")
+load_dotenv(dotenv_path="/srv/Xyronix-Labs-Main-Server/.env")
 
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -46,6 +49,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'core',
+    'GSEF'
 ]
 # Middleware
 MIDDLEWARE = [
@@ -76,8 +81,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 # Database (PostgreSQL)
 DATABASES = {
-    'default': dj_database_url.parse(os.getenv("DATABASE_URL"))
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'XyronixLabs',
+        'USER': 'admin',
+        'PASSWORD': '8882187203',
+        'HOST': '98.70.26.13',
+        'PORT': '5432',
+    }
 }
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {

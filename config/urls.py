@@ -15,10 +15,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from core.views import health_check
+  
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", health_check),  # root URL
+    path("gsef/", include("GSEF.urls")),
+    #path("api/v1/applicant/", applicant_api),  # API endpoint for applicant
+    #path("api/v1/applicant/<int:applicant_id>/", applicant_api),  # API endpoint for specific applicant
 ]
