@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     ApplicantsView, ApplicantDetailView, ApplicantsRangeView,
     ApplicantEmailView, ApplicantAuthView, PingDatabaseView,
-    ApplicantExistsView, ApplicantCreateView
+    ApplicantExistsView, ApplicantCreateView, CustomLoginView, RegisterUserView
 )
 
 urlpatterns = [
@@ -14,6 +14,8 @@ urlpatterns = [
     path("ping/", PingDatabaseView.as_view()),
     path("applicant/exists/<str:application_id>/", ApplicantExistsView.as_view()),
     path('applicant/create/', ApplicantCreateView.as_view()),
+    path('auth/login/', CustomLoginView.as_view()),
+    path('auth/register/', RegisterUserView.as_view()),
 ]
 
 

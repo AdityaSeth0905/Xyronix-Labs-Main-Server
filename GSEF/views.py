@@ -6,6 +6,9 @@ import os
 import httpx
 from dotenv import load_dotenv
 from pathlib import Path
+from django.contrib.auth import login as django_login
+from .models import User
+from django.contrib.auth.hashers import make_password, check_password
 
 # Load .env file
 #env_path = Path(__file__).resolve().parent / ".env"
@@ -162,3 +165,80 @@ class ApplicantCreateView(View):
                         return JsonResponse({"error": "Applicant with this email already has username and password"}, status=409)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
+        
+
+
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CustomLoginView(View):
+    async def post(self, request):
+        import json
+        data = json.loads(request.body)
+        login_type = data.get("login_type")  # "application_id" or "username"
+        username = data.get("username")
+        password = data.get("password")
+        application_id = data.get("application_id")
+
+        if login_type == "application_id":
+            # Check applicant in Supabase
+            async with httpx.AsyncClient() as client:
+                url = f"{SUPABASE_URL}/rest/v1/{TABLE}?application_id=eq.{application_id}&select=*"
+                r = await client.get(url, headers=HEADERS)
+                applicants = r.json()
+                if not applicants:
+                    return JsonResponse({"error": "Invalid application ID"}, status=404)
+            # Check if user exists in Users table
+            try:
+                user = User.objects.get(applicant_id=application_id)
+                return JsonResponse({"success": True, "user_id": user.id})
+            except User.DoesNotExist:
+                # Prompt to create username and password
+                return JsonResponse({"prompt": "create_username_password", "application_id": application_id})
+
+        elif login_type == "username":
+            # Authenticate against Users table
+            try:
+                user = User.objects.get(username=username)
+                if check_password(password, user.password_hash):
+                    return JsonResponse({"success": True, "user_id": user.id})
+                else:
+                    return JsonResponse({"error": "Invalid username or password"}, status=401)
+            except User.DoesNotExist:
+                return JsonResponse({"error": "Invalid username or password"}, status=401)
+
+        else:
+            return JsonResponse({"error": "Invalid login type"}, status=400)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class RegisterUserView(View):
+    async def post(self, request):
+        import json
+        data = json.loads(request.body)
+        application_id = data.get("application_id")
+        username = data.get("username")
+        password = data.get("password")
+
+        if not application_id or not username or not password:
+            return JsonResponse({"error": "Missing fields"}, status=400)
+
+        # Check applicant exists in Supabase
+        async with httpx.AsyncClient() as client:
+            url = f"{SUPABASE_URL}/rest/v1/{TABLE}?application_id=eq.{application_id}&select=*"
+            r = await client.get(url, headers=HEADERS)
+            applicants = r.json()
+            if not applicants:
+                return JsonResponse({"error": "Invalid application ID"}, status=404)
+
+        # Check if username is already taken
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({"error": "Username already taken"}, status=409)
+
+        # Create user in Users table
+        user = User.objects.create(
+            applicant_id=application_id,
+            username=username,
+            password_hash=make_password(password)
+        )
+        return JsonResponse({"success": True, "user_id": user.id})
